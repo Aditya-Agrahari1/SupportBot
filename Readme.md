@@ -44,6 +44,6 @@ This will launch the app in your default web browser.
 📄 **Note**: This chatbot will use the content of `faq.pdf` as its knowledge base. Make sure your questions align with the content inside.
 
 
-![Chatbot Screenshot](Screenshot 2025-08-05 180818.png)
+![Chatbot Screenshot](Screenshot.png)
 
 
