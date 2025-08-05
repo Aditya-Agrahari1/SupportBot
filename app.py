@@ -10,10 +10,8 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 
-# Load environment variables
 load_dotenv()
 
-# Fix for asyncio event loop issue in Streamlit
 try:
     loop = asyncio.get_running_loop()
 except RuntimeError:
@@ -22,8 +20,7 @@ except RuntimeError:
 
 PDF_FILE_PATH = "faq.pdf"
 
-# --- THIS IS THE FINAL, CORRECT SETUP ---
-# We use @st.cache_resource to run this function only once per session and cache the result.
+
 @st.cache_resource
 def setup_qa_chain():
     """
@@ -32,19 +29,15 @@ def setup_qa_chain():
     """
     st.info("Setting up the knowledge base... This may take a moment on first run.")
     
-    # Load the PDF
     loader = PyPDFLoader(PDF_FILE_PATH)
     documents = loader.load()
 
-    # Split the documents
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     texts = text_splitter.split_documents(documents)
 
-    # Create embeddings and the in-memory Chroma vector store
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     db = Chroma.from_documents(texts, embedding=embeddings)
 
-    # Define the custom prompt
     prompt_template = """
     You are a friendly and helpful support assistant for a food delivery app called 'QuickEats'.
     Your goal is to answer the user's question based ONLY on the provided context below.
@@ -64,7 +57,6 @@ def setup_qa_chain():
         template=prompt_template, input_variables=["context", "question"]
     )
 
-    # Create the LLM and the QA chain
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0.3)
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
@@ -76,24 +68,19 @@ def setup_qa_chain():
     
     return qa_chain
 
-# --- STREAMLIT UI ---
 st.set_page_config(page_title="Food Delivery Support Bot", page_icon="🍔")
 st.title("🍔 Food Delivery Support Bot")
 st.caption("Ask me anything about cancellations, refunds, or payment methods!")
 
-# Create and cache the QA chain
 qa_chain = setup_qa_chain()
 
-# Initialize or clear chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# React to user input
 if prompt := st.chat_input("How can I help you today?"):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
